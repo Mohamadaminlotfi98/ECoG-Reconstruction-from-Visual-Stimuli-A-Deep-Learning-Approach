@@ -1,0 +1,41 @@
+def create_graph(electrode_locations, Ecog_data_all):
+    # Extract all relevant data
+    channels = electrode_locations['channels'].flatten()
+    hemisphere = electrode_locations['hemisphere'].flatten()
+    region_codes = electrode_locations['region_codes'].flatten()
+    regions = np.array([r[0] for r in electrode_locations['regions']])
+    talairach = electrode_locations['talairach']
+    volumeind = electrode_locations['volumeind']
+
+    # Determine valid channels that have associated locations
+    valid_channels = channels[~np.isnan(channels)]
+    talairach = talairach[valid_channels - 1]  # to select only valid channels and index mapping
+
+    # Create a graph
+    G = nx.Graph()
+    for i, ch in enumerate(valid_channels):
+        G.add_node(ch,
+                   pos=talairach[i],
+                   hemisphere='Right' if hemisphere[i] == 1 else 'Left',
+                   region_code=int(region_codes[i]),
+                   region=str(regions[i]),
+                   volume_coord=volumeind[i])
+    distances = pdist(talairach)
+    distance_matrix = squareform(distances)
+    k = 1
+    while not nx.is_connected(G):
+        G.clear_edges()
+        nn = NearestNeighbors(n_neighbors=k+1, metric='euclidean')
+        nn.fit(talairach)
+        distances, indices = nn.kneighbors(talairach)
+
+        for i, neighbors in enumerate(indices):
+            for j in neighbors[1:]:  # Skip the first neighbor (self)
+                if i < j:  # Avoid adding edges twice
+                    G.add_edge(valid_channels[i], valid_channels[j], weight=distance_matrix[i, j])
+
+        k += 1
+    valid_channel_indices = [np.where(channels == ch)[0][0] for ch in valid_channels]
+    filtered_Ecog_data_all = Ecog_data_all[valid_channel_indices, ...]
+
+    return G, filtered_Ecog_data_all
