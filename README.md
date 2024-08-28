@@ -49,9 +49,7 @@ Non-Euclidean Data Structure: The brain's connectivity doesn't follow a regular 
 Modeling Brain Connectivity: The learnable adjacency matrix in our GNN allows the model to discover and leverage the underlying connectivity patterns in the brain.
 Integrating Spatial and Temporal Information: Graph convolutions can capture both spatial relationships between brain regions and temporal dynamics of neural activity.
 Flexibility: GNNs can adapt to different brain structures and connectivity patterns, potentially allowing for subject-specific modeling.
-Multi-scale Processing: The multi-layer structure of our GNN, combined with inter-layer connections, allows for processing at multiple spatial and temporal scales, mirroring the brain's ability to integrate information across different levels of abstr
-
-action.
+Multi-scale Processing: The multi-layer structure of our GNN, combined with inter-layer connections, allows for processing at multiple spatial and temporal scales, mirroring the brain's ability to integrate information across different levels of abstraction.
 
 *******************Future Directions:*******************
 In addition to the previously mentioned future directions, we can consider the following avenues for research based on our understanding of the visual system:
