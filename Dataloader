@@ -1,0 +1,52 @@
+from scipy.io import loadmat
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import os
+
+import scipy.io as sio
+# Load the provided data files
+ecog_data = sio.loadmat('/content/drive/MyDrive/Liuetal2009_data/data/IFP/subj10/data_subj10_exp1to2_t100to800_sa1.mat')
+electrode_locations = sio.loadmat('/content/drive/MyDrive/Liuetal2009_data/data/locations/electrode_locations_subj10.mat')
+pictures = sio.loadmat('/content/drive/MyDrive/Liuetal2009_data/data/images/image_info_list.mat')
+
+t = ecog_data['t']
+p_all = ecog_data['p_all']
+d_all = ecog_data['d_all']
+expid = ecog_data['expid']
+responses = ecog_data['responses']
+
+region_names = [region[0][0] for region in electrode_locations['regions']]
+
+image_info_list = pictures['image_info_list']
+image_name_list = pictures['image_name_list']
+print("t shape:", t.shape)
+print("p_all shape:", p_all.shape)
+print("d_all length:", len(d_all))
+print("expid shape:", expid.shape)
+print("responses shape:", responses.shape)
+print("image_info_list shape:", image_info_list.shape)
+print("image_name_list shape:", image_name_list.shape)
+
+trials_to_images = []
+labels = []
+for trial in p_all:
+    index = trial[0] - 1  # MATLAB indexing starts at 1, so we subtract 1
+    obj1 = trial[2]
+    cat1 = trial[4]
+    id1 = trial[6]
+    size1 = trial[8]
+    rot1 = trial[10]
+    labels.append(id1)
+
+    image_info = {
+        'index': index,
+        'obj1': obj1,
+        'cat1': cat1,
+        'id1': id1,
+        'size1': size1,
+        'rot1': rot1,
+        'image_name': image_name_list[index][0]
+    }
+
+    trials_to_images.append(image_info)
