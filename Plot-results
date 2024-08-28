@@ -1,0 +1,96 @@
+# import torch
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from scipy.stats import pearsonr, ttest_ind
+# def preprocess_images(images):
+
+#     transform = transforms.Compose([
+#         transforms.Resize((224, 224)),
+#         transforms.ToTensor(),
+#         transforms.RandomRotation(degrees=(0,270)),
+#         transforms.Normalize(mean=[0.485], std=[0.229])
+#     ])
+#     return torch.stack([transform(Image.fromarray(img)) for img in images])
+
+# def load_models(channel_generator_path, img_to_signal_path, model, device):
+#     channel_generator = model.to(device)
+#     channel_generator.load_state_dict(torch.load(channel_generator_path, map_location=device))
+#     img_to_signal = ModifiedResNet(64).to(device)  # Assuming 64 is the correct output dimension
+#     img_to_signal.load_state_dict(torch.load(img_to_signal_path, map_location=device))
+#     return channel_generator, img_to_signal
+
+# def generate_predictions(real_data, channel_generator, img_to_signal, preprocessed_images, device):
+#     real_data = torch.tensor(real_data)
+#     real_data = real_data.permute(1, 0, 2).to(device)
+#     channel_generator.eval()
+#     img_to_signal.eval()
+#     with torch.no_grad():
+#         signal_img = img_to_signal(preprocessed_images.to(device))
+#         generated_data = channel_generator(signal_img)
+#     return generated_data.cpu().numpy()
+
+# def plot_predictions(true_data, predicted_data, channels_to_predict, num_trials=20):
+#     num_channels = len(channels_to_predict)
+#     fig, axes = plt.subplots(num_channels, num_trials, figsize=(30, 5*num_channels))
+#     if num_channels == 1:
+#         axes = axes[np.newaxis, :]
+
+#     for i, channel in enumerate(channels_to_predict):
+#         for j in range(num_trials):
+#             index = torch.randint(0, true_data.shape[0], (1,)).item()
+#             ax = axes[i, j]
+#             ax.plot(true_data[index, channel], label='True')
+#             ax.plot(predicted_data[index, channel], label='Predicted')
+#             ax.set_title(f'Channel {channel}, Trial {j+1}')
+#             ax.legend()
+#             if i == num_channels - 1:
+#                 ax.set_xlabel('Time')
+#             if j == 0:
+#                 ax.set_ylabel('Amplitude')
+
+#     plt.tight_layout()
+#     plt.show()
+
+# def calculate_statistics(true_data, predicted_data, channels_to_predict):
+#     correlations = []
+#     p_values = []
+#     t_test_results = []
+#     for channel in channels_to_predict:
+#         true_flat = true_data[:, channel].flatten()
+#         predicted_flat = predicted_data[:, channel].flatten()
+
+#         correlation, p_value = pearsonr(true_flat, predicted_flat)
+#         t_stat, t_p_value = ttest_ind(true_flat, predicted_flat)
+
+#         correlations.append(correlation)
+#         p_values.append(p_value)
+#         t_test_results.append((t_stat, t_p_value))
+
+#     return correlations, p_values, t_test_results
+
+# graph, filtered_Ecog_data_all = create_graph(electrode_locations, filtered_data)
+# stimulus_dim = 64
+# num_channels = filtered_Ecog_data_all.shape[0]
+# signal_length = filtered_Ecog_data_all.shape[2]
+# hidden_dim = 512
+# num_graph_layers = 1
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# model = ChannelGenerator(stimulus_dim, num_channels, signal_length, graph, hidden_dim)
+# channel_generator, img_to_signal = load_models('enhanced_channel_generator.pth', 'img_to_signal.pth', model, device)
+# preprocessed_images = preprocess_images(images_array)
+# predicted_data = generate_predictions(filtered_Ecog_data_all, channel_generator, img_to_signal, preprocessed_images, device)
+# true_data = filtered_Ecog_data_all.transpose(1, 0, 2)
+# channels_to_predict = [30]
+# plot_predictions(true_data, predicted_data, channels_to_predict, num_trials=10)
+
+# mse = np.mean((true_data[:, channels_to_predict] - predicted_data[:, channels_to_predict])**2)
+# print(f"Mean Squared Error for predicted channels: {mse:.4f}")
+
+# correlations, p_values, t_test_results = calculate_statistics(true_data, predicted_data, channels_to_predict)
+
+# for i, channel in enumerate(channels_to_predict):
+#     print(f"Statistics for Channel {channel}:")
+#     print(f"Correlation: {correlations[i]:.4f}")
+#     print(f"P-value: {p_values[i]:.4e}")
+#     t_stat, t_p_value = t_test_results[i]
+#     print(f"T-test statistic: {t_stat:.4f}, P-value: {t_p_value:.4e}")
