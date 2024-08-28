@@ -1,0 +1,34 @@
+# import torch
+# import numpy as np
+# import scipy.signal as signal
+# import matplotlib.pyplot as plt
+
+# def bandpass_filter(data, lowcut, highcut, fs, order=4):
+#     nyquist = 0.5 * fs
+#     low = lowcut / nyquist
+#     high = highcut / nyquist
+#     b, a = signal.butter(order, [low, high], btype='band')
+#     filtered_data = signal.lfilter(b, a, data, axis=-1)
+#     return filtered_data
+
+# def convert_and_rearrange(data_list):
+#     data_tensor = torch.stack([torch.tensor(data, dtype=torch.float32) for data in data_list[0]])
+#     data_tensor = data_tensor.permute(0, 1, 2)
+#     return data_tensor
+
+
+# lowcut = 1  # Lower bound of the filter (Hz)
+# highcut = 20.0  # Upper bound of the filter (Hz)
+# fs = 1000.0  # Sampling frequency (Hz)
+
+# data_tensor = convert_and_rearrange(d_all)
+# data_numpy = data_tensor.numpy()
+# filtered_data = np.empty_like(data_numpy)
+# for i in range(data_numpy.shape[0]):
+#     for j in range(data_numpy.shape[1]):
+#         region_data = data_numpy[i, j, :]
+#         min_val = region_data.min()
+#         max_val = region_data.max()
+#         # Normalize to the range [-1, 1]
+#         filtered_data[i, j] = 2 * (region_data - min_val) / (max_val - min_val) - 1
+#         filtered_data[i, j] = bandpass_filter(filtered_data[i, j], lowcut, highcut, fs)
