@@ -1,0 +1,30 @@
+import scipy.io as sio
+import numpy as np
+import matplotlib.pyplot as plt
+
+def extract_images_for_channel():
+    images = []
+    num_trials = len(trials_to_images)
+
+    for trial in range(1, num_trials + 1):
+
+        image_name = trials_to_images[trial - 1]['image_name'][0][0][0]
+        image_path = f'/content/drive/MyDrive/Liuetal2009_data/Liuetal2009_pictures/matlab/{image_name}'
+        image_data = sio.loadmat(image_path)
+
+        # Find the key containing the image data
+        image_key = None
+        for key in image_data.keys():
+            if 'img' in key:
+                image_key = key
+                break
+
+        if image_key is None:
+            raise ValueError(f'No image key found in {image_path}')
+
+        img = image_data[image_key]
+        images.append(img)
+
+    return np.array(images)
+
+images_array = extract_images_for_channel()
