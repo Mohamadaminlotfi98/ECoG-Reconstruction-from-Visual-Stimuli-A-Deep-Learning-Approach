@@ -1,0 +1,49 @@
+def main():
+    graph, filtered_Ecog_data_all = create_graph(electrode_locations, Ecog_data_all)
+
+    hidden_size = filtered_Ecog_data_all.shape[0]
+    stimulus_dim = 64
+    num_channels = filtered_Ecog_data_all.shape[0]
+    signal_length = filtered_Ecog_data_all.shape[2]
+    if 'COLAB_TPU_ADDR' in os.environ:
+
+
+        import torch_xla.core.xla_model as xm
+        device = xm.xla_device()
+    else:
+        # Otherwise, fall back to GPU or CPU
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'Using device: {device}')
+    model = MultiLayerCorticalNetwork(graph, stimulus_dim, num_channels, signal_length, num_layers=8, hidden_dim = hidden_size ,dropout=0.2, device=device)
+    img_to_signal = ModifiedResNet(stimulus_dim).to(device)
+
+    channel_generator_path = 'enhanced_channel_generator.pth'
+    img_to_signal_path = 'img_to_signal.pth'
+
+    if os.path.exists(channel_generator_path):
+        model.load_state_dict(torch.load(channel_generator_path, map_location=torch.device('cpu')))
+        print("Loaded enhanced channel generator weights from file.")
+    else:
+        print("No pre-trained weights found for enhanced channel generator.")
+
+    if os.path.exists(img_to_signal_path):
+        img_to_signal.load_state_dict(torch.load(img_to_signal_path, map_location=torch.device('cpu')))
+        print("Loaded img_to_signal weights from file.")
+    else:
+        print("No pre-trained weights found for img_to_signal.")
+
+    preprocessed_images = preprocess_images(images_array)
+    batch_size = 64
+    lr = 0.001
+    num_epochs = 1000
+
+    channel_generator, img_to_signal, losses = train_model(torch.tensor(filtered_Ecog_data_all),
+                                                           preprocessed_images,
+                                                           batch_size, lr, num_epochs,
+                                                           device, model, img_to_signal)
+
+    torch.save(channel_generator.state_dict(), channel_generator_path)
+    torch.save(img_to_signal.state_dict(), img_to_signal_path)
+
+if __name__ == "__main__":
+    main()
