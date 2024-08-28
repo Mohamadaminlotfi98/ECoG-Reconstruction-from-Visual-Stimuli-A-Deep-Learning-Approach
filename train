@@ -1,0 +1,31 @@
+def train_model(ecog_data, image_dataset, batch_size, lr, num_epochs, device, model, img_to_signal):
+    img_to_signal = img_to_signal.to(device)
+    channel_generator = model.to(device)
+    optimizer = optim.Adam(list(channel_generator.parameters()) + list(img_to_signal.parameters()), lr=lr)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=150, factor=0.95)
+    ecog_dataset = ecog_data.permute(1, 0, 2)
+
+    dataloader = DataLoader(TensorDataset(ecog_dataset, image_dataset), batch_size=batch_size, shuffle=False)
+
+    losses = []
+    for epoch in range(num_epochs):
+        channel_generator.train()
+        img_to_signal.train()
+        total_loss = 0
+        for batch_ecog, batch_images in dataloader:
+            batch_ecog, batch_images = batch_ecog.to(device), batch_images.to(device)
+            optimizer.zero_grad()
+            signal_img = img_to_signal(batch_images)
+            generated_data = channel_generator(signal_img)
+            loss = advanced_loss(generated_data, batch_ecog)
+            loss.backward()
+            total_loss += loss.item() * batch_images.size(0)
+            optimizer.step()
+
+        avg_loss = total_loss / len(ecog_dataset)
+        scheduler.step(avg_loss)
+        losses.append(avg_loss)
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch [{epoch+1}/{num_epochs}], Average Loss: {avg_loss:.4f}')
+
+    return channel_generator, img_to_signal, losses
