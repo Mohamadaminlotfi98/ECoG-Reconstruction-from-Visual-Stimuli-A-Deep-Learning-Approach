@@ -1,0 +1,137 @@
+# import numpy as np
+# import networkx as nx
+# import matplotlib.pyplot as plt
+# from scipy.spatial.distance import pdist, squareform
+# from mpl_toolkits.mplot3d import Axes3D
+# from sklearn.neighbors import NearestNeighbors
+
+# # Extract all relevant data
+# channels = electrode_locations['channels'].flatten()
+# hemisphere = electrode_locations['hemisphere'].flatten()
+# region_codes = electrode_locations['region_codes'].flatten()
+# regions = np.array([r[0] for r in electrode_locations['regions']])
+# talairach = electrode_locations['talairach']
+# volumeind = electrode_locations['volumeind']
+# talairach = talairach[channels -1 ] # to select only valid channels and index mapping
+
+# # Create a graph
+# G = nx.Graph()
+
+# # Add nodes to the graph
+# for i, ch in enumerate(channels):
+#     G.add_node(ch,
+#                pos=talairach[i],
+#                hemisphere='Right' if hemisphere[i] == 1 else 'Left',
+#                region_code=int(region_codes[i]),
+#                region=str(regions[i]),
+#                volume_coord=volumeind[i])
+
+# # Calculate pairwise distances between electrodes
+# distances = pdist(talairach)
+# distance_matrix = squareform(distances)
+
+# # Function to check if the graph is connected
+# def is_connected(G):
+#     return nx.is_connected(G)
+
+# # Find the minimum k that ensures a connected graph
+# k = 1
+# while not is_connected(G):
+#     G.clear_edges()
+#     nn = NearestNeighbors(n_neighbors=k+1, metric='euclidean')
+#     nn.fit(talairach)
+#     distances, indices = nn.kneighbors(talairach)
+
+#     for i, neighbors in enumerate(indices):
+#         for j in neighbors[1:]:  # Skip the first neighbor (self)
+#             if i < j:  # Avoid adding edges twice
+#                 G.add_edge(channels[i], channels[j], weight=distance_matrix[i, j])
+
+#     k += 1
+
+# # 3D visualization of the graph with labels
+# fig = plt.figure(figsize=(15, 12))
+# ax = fig.add_subplot(111, projection='3d')
+
+# # Draw nodes
+# pos = nx.get_node_attributes(G, 'pos')
+# hemispheres = nx.get_node_attributes(G, 'hemisphere')
+# region_codes = nx.get_node_attributes(G, 'region_code')
+
+# xs = [pos[node][0] for node in G.nodes()]
+# ys = [pos[node][1] for node in G.nodes()]
+# zs = [pos[node][2] for node in G.nodes()]
+# colors = ['red' if hemispheres[node] == 'Right' else 'blue' for node in G.nodes()]
+# sizes = [30 + region_codes[node] for node in G.nodes()]  # Adjust size based on region code
+
+# scatter = ax.scatter(xs, ys, zs, c=colors, s=sizes, alpha=0.6)
+
+# # Draw edges
+# for edge in G.edges():
+#     x = [pos[edge[0]][0], pos[edge[1]][0]]
+#     y = [pos[edge[0]][1], pos[edge[1]][1]]
+#     z = [pos[edge[0]][2], pos[edge[1]][2]]
+#     ax.plot(x, y, z, c='gray', alpha=0.2)
+
+# # Add labels
+# for node, (x, y, z) in pos.items():
+#     ax.text(x, y, z, f"{node}\n{G.nodes[node]['region']}", fontsize=6)
+
+# # Set labels and title
+# ax.set_xlabel('X (Talairach)')
+# ax.set_ylabel('Y (Talairach)')
+# ax.set_zlabel('Z (Talairach)')
+# ax.set_title("3D Electrode Graph with Labels and Region Information")
+
+# # Add a color bar for hemisphere
+# cbar = plt.colorbar(scatter, ax=ax, ticks=[0, 1])
+# cbar.set_ticklabels(['Left', 'Right'])
+# cbar.set_label('Hemisphere')
+
+# plt.tight_layout()
+# plt.show()
+
+# # Print graph information
+# print(f"Number of nodes: {G.number_of_nodes()}")
+# print(f"Number of edges: {G.number_of_edges()}")
+# print(f"Average clustering coefficient: {nx.average_clustering(G):.4f}")
+# print(f"Average shortest path length: {nx.average_shortest_path_length(G):.4f}")
+
+# # Print additional statistics
+# print("\nRegion distribution:")
+# region_dist = {}
+# for node in G.nodes():
+#     region = G.nodes[node]['region']
+#     region_dist[region] = region_dist.get(region, 0) + 1
+# for region, count in sorted(region_dist.items(), key=lambda x: x[1], reverse=True):
+#     print(f"{region}: {count}")
+
+# print("\nHemisphere distribution:")
+# hemisphere_dist = {'Left': sum(1 for node in G.nodes() if G.nodes[node]['hemisphere'] == 'Left'),
+#                    'Right': sum(1 for node in G.nodes() if G.nodes[node]['hemisphere'] == 'Right')}
+# print(hemisphere_dist)
+
+# # Calculate and print average distance between connected electrodes
+# total_distance = sum(G.edges[edge]['weight'] for edge in G.edges())
+# avg_distance = total_distance / G.number_of_edges()
+# print(f"\nAverage distance between connected electrodes: {avg_distance:.4f}")
+
+# # Calculate and print the degree distribution
+# degrees = [G.degree(node) for node in G.nodes()]
+# avg_degree = sum(degrees) / len(degrees)
+# print(f"Average node degree: {avg_degree:.2f}")
+# print("Degree distribution:")
+# degree_dist = {}
+# for degree in degrees:
+#     degree_dist[degree] = degree_dist.get(degree, 0) + 1
+# for degree, count in sorted(degree_dist.items()):
+#     print(f"Degree {degree}: {count} nodes")
+
+# # Analyze connectivity between hemispheres
+# left_nodes = [node for node in G.nodes() if G.nodes[node]['hemisphere'] == 'Left']
+# right_nodes = [node for node in G.nodes() if G.nodes[node]['hemisphere'] == 'Right']
+# inter_hemisphere_edges = [
+#     (u, v) for u, v in G.edges()
+#     if G.nodes[u]['hemisphere'] != G.nodes[v]['hemisphere']
+# ]
+# print(f"\nNumber of inter-hemisphere connections: {len(inter_hemisphere_edges)}")
